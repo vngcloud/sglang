@@ -1,0 +1,45 @@
+name: dev-deploy
+
+# Python-only dev loop for the MiniMax-M2.5 sglang deployment on the
+# self-hosted h200 node. Pushing to `dev` syncs python/sglang into the
+# bind-mounted source tree and restarts the container (editable install,
+# no compile). Keep `dev` based on the v0.5.11 tag so the Python stays
+# ABI-compatible with the image's prebuilt sgl_kernel.
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: sglang-dev-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, sglang-dev]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Sync python/sglang into the mounted source tree
+        run: |
+          mkdir -p /mnt/src/sglang/python/sglang
+          rsync -a --delete "$GITHUB_WORKSPACE/python/sglang/" /mnt/src/sglang/python/sglang/
+
+      - name: Restart sglang (bind-mounted editable source picks up changes)
+        run: |
+          cd /mnt/sglang-deploy
+          docker compose restart sglang
+
+      - name: Wait for sglang /health (checked inside the container)
+        run: |
+          for i in $(seq 1 80); do
+            if docker exec sglang-minimax-m2-5 \
+                 python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:30000/health').status==200 else 1)" 2>/dev/null; then
+              echo "sglang healthy after restart"; exit 0
+            fi
+            sleep 6
+          done
+          echo "sglang did not become healthy in time"; \
+          docker compose -f /mnt/sglang-deploy/docker-compose.yml logs --tail=120 sglang; exit 1
