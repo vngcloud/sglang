@@ -110,3 +110,5 @@ __all__ = [
     "global_config",
     "__version__",
 ]
+
+# dev-deploy smoke test: 2026-06-12
