@@ -269,23 +269,8 @@ class MinimaxM2Detector(BaseFormatDetector):
                 if function_match:
                     function_name = function_match.group(1).strip()
 
-                    # Emit the tool call even when the name is not among the
-                    # provided tools. A hallucinated / unknown tool name must
-                    # still surface as a tool_call so the client returns a clean
-                    # "unknown tool" error and the model can recover. The old
-                    # behavior dumped the raw <invoke> markup into normal text,
-                    # which poisons the conversation history and makes the model
-                    # spiral into emitting tool calls as plain text on every
-                    # retry. This matches vLLM's MinimaxM2ToolParser, which does
-                    # not validate the name against the provided tools.
-                    if function_name not in self._tool_indices:
-                        logger.warning(
-                            "Tool '%s' is not in the provided tools; emitting it "
-                            "as a tool call anyway to avoid leaking tool-call "
-                            "markup as assistant text.",
-                            function_name,
-                        )
-
+                    # Forward unknown/hallucinated tool names too, so the client
+                    # gets a clean error instead of the markup leaking as text.
                     self._current_function_name = function_name
                     self._function_name_sent = True
 
