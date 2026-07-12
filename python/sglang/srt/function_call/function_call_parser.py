@@ -12,6 +12,9 @@ from sglang.srt.entrypoints.openai.protocol import (
 from sglang.srt.environ import ToolStrictLevel, envs
 from sglang.srt.function_call.base_format_detector import BaseFormatDetector
 from sglang.srt.function_call.core_types import ToolCallItem
+from sglang.srt.function_call.deepseekcoderv2_detector import (
+    DeepSeekCoderV2Detector,
+)
 from sglang.srt.function_call.deepseekv3_detector import DeepSeekV3Detector
 from sglang.srt.function_call.deepseekv31_detector import DeepSeekV31Detector
 from sglang.srt.function_call.deepseekv32_detector import DeepSeekV32Detector
@@ -53,6 +56,7 @@ class FunctionCallParser:
 
     ToolCallParserEnum: Dict[str, Type[BaseFormatDetector]] = {
         "deepseekv3": DeepSeekV3Detector,
+        "deepseekcoderv2": DeepSeekCoderV2Detector,
         "deepseekv31": DeepSeekV31Detector,
         "deepseekv32": DeepSeekV32Detector,
         "glm": Glm4MoeDetector,
